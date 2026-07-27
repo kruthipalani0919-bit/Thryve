@@ -1,16 +1,38 @@
 import { useEffect, useState } from "react";
-import { useParams } from "react-router-dom";
+import { useNavigate, useParams } from "react-router-dom";
 import { BookOpen, Users, Sparkles } from "lucide-react";
 import { getSessionDetails } from "../services/sessionApi";
+import socket from "../services/socket";
 
 const JoinSession = () => {
   const { sessionCode } = useParams();
+  const navigate = useNavigate();
 
   const [session, setSession] = useState(null);
+useEffect(() => {
 
-  useEffect(() => {
     loadSession();
-  }, []);
+
+    socket.emit("join-room", sessionCode);
+
+  socket.on("quiz-started", (quiz) => {
+
+    navigate(`/student-quiz/${quiz.quizId}`, {
+        state: {
+            duration: quiz.duration,
+            title: quiz.title,
+        },
+    });
+
+});
+
+    return () => {
+
+        socket.off("quiz-started");
+
+    };
+
+}, []);
 
   const loadSession = async () => {
     try {

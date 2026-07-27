@@ -86,6 +86,14 @@ const SessionCard = ({
         Open Session
       </button>
 
+
+      <button
+  onClick={() => navigate(`/quiz/${session.id}`)}
+  className="mt-3 w-full rounded-xl border border-orange-500 py-3 font-semibold text-orange-500 hover:bg-orange-50"
+>
+  Manage Quiz
+</button>
+
     </div>
   );
 };
