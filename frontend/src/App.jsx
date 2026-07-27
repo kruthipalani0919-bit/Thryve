@@ -6,6 +6,9 @@ import StudentDashboard from "./pages/StudentDashboard";
 import MySessions from "./pages/MySessions";
 import LiveSession from "./pages/LiveSession";
 import JoinSession from "./pages/JoinSession";
+import QuizManagement from "./pages/QuizManagement";
+import QuizEditor from "./pages/QuizEditor";
+import StudentQuiz from "./pages/StudentQuiz";
 
 
 function App() {
@@ -19,6 +22,9 @@ function App() {
         <Route path="/session/:id" element={<LiveSession />} />
         <Route path="/live/:code" element={<LiveSession />} />
        <Route path="/join/:sessionCode" element={<JoinSession />} />
+       <Route path="/quiz/:sessionId" element={<QuizManagement />} />
+       <Route path="/quiz-editor/:quizId" element={<QuizEditor/>}/>
+       <Route path="/student-quiz/:quizId" element={<StudentQuiz/>} />
       </Routes>
     </BrowserRouter>
   );
