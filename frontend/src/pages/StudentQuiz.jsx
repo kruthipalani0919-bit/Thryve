@@ -10,47 +10,39 @@ const StudentQuiz = () => {
     const [quiz, setQuiz] = useState(null);
     const [questions, setQuestions] = useState([]);
     const [answers, setAnswers] = useState({});
-const [submitted, setSubmitted] = useState(false);
-const [timeLeft, setTimeLeft] = useState(0);
-const [timerStarted, setTimerStarted] = useState(false);
+    const [submitted, setSubmitted] = useState(false);
+    const [timeLeft, setTimeLeft] = useState(0);
+    const [timerStarted, setTimerStarted] = useState(false);
 
+    // Load quiz only once
+    useEffect(() => {
+        loadQuiz();
+    }, []);
 
-useEffect(() => {
+    // Countdown Timer
+    useEffect(() => {
 
-    loadQuiz();
+        if (!timerStarted || submitted) return;
 
-}, []);
+        if (timeLeft <= 0) {
 
+            handleSubmit();
 
-useEffect(() => {
+            return;
 
-    if (!timerStarted) return;
+        }
 
-    if (submitted) return;
+        console.log("Timer:", timeLeft);
 
-    if (timeLeft <= 0) return;
+        const timer = setTimeout(() => {
 
-    const timer = setTimeout(() => {
+            setTimeLeft((prev) => prev - 1);
 
-        setTimeLeft(prev => prev - 1);
+        }, 1000);
 
-    }, 1000);
+        return () => clearTimeout(timer);
 
-    return () => clearTimeout(timer);
-
-}, [timeLeft, submitted, timerStarted]);
-
-
-useEffect(() => {
-
-    if (timeLeft === 0 && !submitted && questions.length > 0) {
-
-        handleSubmit();
-
-    }
-
-}, [timeLeft]);
-
+    }, [timeLeft, timerStarted, submitted]);
 
     const loadQuiz = async () => {
 
@@ -60,15 +52,19 @@ useEffect(() => {
 
             setQuiz(quizRes.data);
 
- if (!timerStarted && quizRes.data.status === "live") {
-
-    setTimeLeft(quizRes.data.duration);
-
-    setTimerStarted(true);
-
-}
+            console.log("Duration:", quizRes.data.duration);
+console.log("Status:", quizRes.data.status);
 
             if (quizRes.data.status === "live") {
+
+                // Start timer only once
+                if (!timerStarted) {
+
+                    setTimeLeft(Number(quizRes.data.duration));
+
+                    setTimerStarted(true);
+
+                }
 
                 const questionRes = await api.get(`/quizzes/${quizId}/questions`);
 
@@ -88,35 +84,42 @@ useEffect(() => {
 
     };
 
+    const handleSubmit = async () => {
+
+        if (submitted) return;
+
+        try {
+
+            const result = await submitQuiz(answers);
+
+            setSubmitted(true);
+
+            alert(
+                `Quiz Submitted!\n\nScore: ${result.score}/${result.total}`
+            );
+
+        }
+
+        catch (err) {
+
+            console.log(err);
+
+            alert("Submission Failed");
+
+        }
+
+    };
+
     if (!quiz) {
 
-        return <h2 className="p-10 text-xl">Loading Quiz...</h2>;
-
-    }
-
-const handleSubmit = async () => {
-
-    try {
-
-        const result = await submitQuiz(answers);
-
-        alert(
-            `Quiz Submitted!\n\nScore: ${result.score}/${result.total}`
+        return (
+            <h2 className="p-10 text-xl">
+                Loading Quiz...
+            </h2>
         );
 
-        setSubmitted(true);
-
     }
 
-    catch(err){
-
-        console.log(err);
-
-        alert("Submission Failed");
-
-    }
-
-};
     return (
 
         <div className="min-h-screen bg-slate-100 p-10">
@@ -127,9 +130,9 @@ const handleSubmit = async () => {
                     {quiz.title}
                 </h1>
 
-               <p className="mt-3 text-lg font-semibold text-red-600">
-    Time Left : {timeLeft} Seconds
-</p>
+                <p className="mt-3 text-lg font-semibold text-red-600">
+                    Time Left : {timeLeft} Seconds
+                </p>
 
                 <hr className="my-6" />
 
@@ -155,56 +158,65 @@ const handleSubmit = async () => {
                             <div className="mt-4 space-y-3">
 
                                 <label className="block">
-                                   <input
-    type="radio"
-    name={q.id}
-    value="A"
-    checked={answers[q.id] === "A"}
-    onChange={(e)=>
-        setAnswers({
-            ...answers,
-            [q.id]: e.target.value
-        })
-    }
-/>
+
+                                    <input
+                                        type="radio"
+                                        name={q.id}
+                                        value="A"
+                                        checked={answers[q.id] === "A"}
+                                        onChange={(e) =>
+                                            setAnswers({
+                                                ...answers,
+                                                [q.id]: e.target.value
+                                            })
+                                        }
+                                    />
+
                                     {" "}
                                     {q.option_a}
+
                                 </label>
 
                                 <label className="block">
+
                                     <input
-    type="radio"
-    name={q.id}
-    value="B"
-    checked={answers[q.id] === "B"}
-    onChange={(e)=>
-        setAnswers({
-            ...answers,
-            [q.id]: e.target.value
-        })
-    }
-/>
+                                        type="radio"
+                                        name={q.id}
+                                        value="B"
+                                        checked={answers[q.id] === "B"}
+                                        onChange={(e) =>
+                                            setAnswers({
+                                                ...answers,
+                                                [q.id]: e.target.value
+                                            })
+                                        }
+                                    />
+
                                     {" "}
                                     {q.option_b}
+
                                 </label>
 
                                 {q.option_c && (
 
                                     <label className="block">
+
                                         <input
-    type="radio"
-    name={q.id}
-    value="C"
-    checked={answers[q.id] === "C"}
-    onChange={(e)=>
-        setAnswers({
-            ...answers,
-            [q.id]: e.target.value
-        })
-    }
-/>
+                                            type="radio"
+                                            name={q.id}
+                                            value="C"
+                                            checked={answers[q.id] === "C"}
+                                            onChange={(e) =>
+                                                setAnswers({
+                                                    ...answers,
+                                                    [q.id]: e.target.value
+                                                })
+                                            }
+                                        />
+
                                         {" "}
                                         {q.option_c}
+
                                     </label>
 
                                 )}
@@ -212,20 +224,23 @@ const handleSubmit = async () => {
                                 {q.option_d && (
 
                                     <label className="block">
+
                                         <input
-    type="radio"
-    name={q.id}
-    value="D"
-    checked={answers[q.id] === "D"}
-    onChange={(e)=>
-        setAnswers({
-            ...answers,
-            [q.id]: e.target.value
-        })
-    }
-/>
+                                            type="radio"
+                                            name={q.id}
+                                            value="D"
+                                            checked={answers[q.id] === "D"}
+                                            onChange={(e) =>
+                                                setAnswers({
+                                                    ...answers,
+                                                    [q.id]: e.target.value
+                                                })
+                                            }
+                                        />
+
                                         {" "}
                                         {q.option_d}
+
                                     </label>
 
                                 )}
@@ -240,14 +255,14 @@ const handleSubmit = async () => {
 
                 {questions.length > 0 && !submitted && (
 
-    <button
-        onClick={handleSubmit}
-        className="mt-6 rounded-xl bg-green-600 px-8 py-3 text-white"
-    >
-        Submit Quiz
-    </button>
+                    <button
+                        onClick={handleSubmit}
+                        className="mt-6 rounded-xl bg-green-600 px-8 py-3 text-white"
+                    >
+                        Submit Quiz
+                    </button>
 
-)}
+                )}
 
             </div>
 

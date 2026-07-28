@@ -26,9 +26,17 @@ useEffect(() => {
 
 });
 
+
+socket.on("poll-started", (poll) => {
+
+    navigate(`/student-poll/${poll.pollId}`);
+
+});
+
     return () => {
 
-        socket.off("quiz-started");
+   socket.off("quiz-started");
+socket.off("poll-started");
 
     };
 
