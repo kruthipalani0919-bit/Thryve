@@ -5,14 +5,15 @@ import "./config/database.js";
 
 const server = http.createServer(app);
 
-const io = new Server(server, {
+// 👇 Export io
+export const io = new Server(server, {
   cors: {
     origin: process.env.CLIENT_URL,
     methods: ["GET", "POST"],
   },
 });
 
-// Make io available to controllers
+// Make io available to controllers (keep this)
 app.set("io", io);
 
 io.on("connection", (socket) => {

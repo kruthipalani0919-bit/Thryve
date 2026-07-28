@@ -9,7 +9,9 @@ import JoinSession from "./pages/JoinSession";
 import QuizManagement from "./pages/QuizManagement";
 import QuizEditor from "./pages/QuizEditor";
 import StudentQuiz from "./pages/StudentQuiz";
-
+import PollManagement from "./pages/PollManagement";
+import StudentPoll from "./pages/StudentPoll";
+import PollResults from "./pages/PollResults";
 
 function App() {
   return (
@@ -25,6 +27,10 @@ function App() {
        <Route path="/quiz/:sessionId" element={<QuizManagement />} />
        <Route path="/quiz-editor/:quizId" element={<QuizEditor/>}/>
        <Route path="/student-quiz/:quizId" element={<StudentQuiz/>} />
+       <Route path="/polls/:sessionId" element={<PollManagement/>}/>
+       <Route path="/student-poll/:pollId" element={<StudentPoll />} />
+       <Route path="/poll-results/:pollId" element={<PollResults />}
+/>
       </Routes>
     </BrowserRouter>
   );

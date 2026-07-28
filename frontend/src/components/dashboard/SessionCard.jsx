@@ -86,14 +86,23 @@ const SessionCard = ({
         Open Session
       </button>
 
+<div className="mt-3 flex gap-3">
 
-      <button
-  onClick={() => navigate(`/quiz/${session.id}`)}
-  className="mt-3 w-full rounded-xl border border-orange-500 py-3 font-semibold text-orange-500 hover:bg-orange-50"
->
-  Manage Quiz
-</button>
+  <button
+    onClick={() => navigate(`/quiz/${session.id}`)}
+    className="flex-1 rounded-xl border border-orange-500 py-3 font-semibold text-orange-500 transition hover:bg-orange-50"
+  >
+    Manage Quiz
+  </button>
 
+  <button
+    onClick={() => navigate(`/polls/${session.id}`)}
+    className="flex-1 rounded-xl bg-black py-3 font-semibold text-white transition hover:bg-orange-500"
+  >
+    Polls
+  </button>
+
+</div>
     </div>
   );
 };
