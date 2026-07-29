@@ -129,6 +129,37 @@ export const startPoll = async (req, res) => {
 
         const { pollId } = req.params;
 
+        // Fetch target poll first to get session_id
+        const targetPoll = await pool.query(
+            `SELECT session_id FROM polls WHERE id = $1`,
+            [pollId]
+        );
+
+        if (targetPoll.rows.length === 0) {
+            return res.status(404).json({ message: "Poll not found" });
+        }
+
+        const sessionId = targetPoll.rows[0].session_id;
+
+        // Mark previous live polls and live quizzes for this session as completed
+        await pool.query(
+            `
+            UPDATE polls
+            SET status = 'completed'
+            WHERE session_id = $1 AND status = 'live'
+            `,
+            [sessionId]
+        );
+
+        await pool.query(
+            `
+            UPDATE quizzes
+            SET status = 'completed'
+            WHERE session_id = $1 AND status = 'live'
+            `,
+            [sessionId]
+        );
+
         // Make poll live
         const pollResult = await pool.query(
             `
@@ -155,9 +186,10 @@ export const startPoll = async (req, res) => {
         );
 
         const sessionCode = sessionResult.rows[0].session_code;
+       const socketIo = req.app.get("io");
 
         // Notify all students that poll has started
-        io.to(sessionCode).emit("poll-started", {
+        socketIo.to(sessionCode).emit("poll-started", {
             pollId: poll.id,
         });
 
@@ -175,7 +207,7 @@ export const startPoll = async (req, res) => {
                     [poll.id]
                 );
 
-                io.to(sessionCode).emit("poll-ended", {
+                socketIo.to(sessionCode).emit("poll-ended", {
                     pollId: poll.id,
                 });
 
@@ -212,43 +244,15 @@ export const submitVote = async (req, res) => {
 
         const { pollId } = req.params;
 
-
-
         const { option } = req.body;
 
-const existingVote = await pool.query(
-    `
-    SELECT *
-    FROM poll_answers
-    WHERE poll_id = $1
-    AND selected_option = $2
-    `,
-    [
-        pollId,
-        option
-    ]
-);
-
-if (existingVote.rows.length > 0) {
-
-    return res.status(400).json({
-        message: "Vote already submitted."
-    });
-
-}
-
-       
-
         await pool.query(
-
-            
             `
             INSERT INTO poll_answers
             (
                 poll_id,
                 selected_option
             )
-
             VALUES($1,$2)
             `,
             [
@@ -257,10 +261,9 @@ if (existingVote.rows.length > 0) {
             ]
         );
 
-const io = req.app.get("io");
+       const socketIo = req.app.get("io");
 
-io.to(pollId).emit("poll-updated");
-
+        socketIo.to(pollId).emit("poll-updated");
 
         res.json({
             message: "Vote Submitted"

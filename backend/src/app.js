@@ -8,6 +8,7 @@ import joinRoutes from "./routes/joinRoutes.js";
 import quizRoutes from "./routes/quizRoutes.js";
 import questionRoutes from "./routes/questionRoutes.js";
 import pollRoutes from "./routes/pollRoutes.js";
+import aiQuizRoutes from "./routes/aiQuizRoutes.js";
 
 dotenv.config();
 
@@ -27,8 +28,9 @@ app.use("/api/auth", authRoutes);
 app.use("/api/sessions", sessionRoutes);
 app.use("/api/join", joinRoutes);
 app.use("/api/quizzes", quizRoutes);
-app.use("/api/questions",questionRoutes);
+app.use("/api/questions", questionRoutes);
 app.use("/api/polls", pollRoutes);
+app.use("/api/ai", aiQuizRoutes);
 
 app.get("/", (req, res) => {
   res.json({

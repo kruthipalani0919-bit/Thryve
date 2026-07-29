@@ -124,7 +124,7 @@ const FacultyDashboard = () => {
                 </div>
 
                 <div className="rounded-xl bg-green-50 p-4 text-slate-700">
-                  🤖 AI generated class insights
+                  🤖 AI quiz created succesfully
                 </div>
 
               </div>

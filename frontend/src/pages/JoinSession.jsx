@@ -5,195 +5,296 @@ import { getSessionDetails } from "../services/sessionApi";
 import socket from "../services/socket";
 
 const JoinSession = () => {
-  const { sessionCode } = useParams();
-  const navigate = useNavigate();
 
-  const [session, setSession] = useState(null);
-useEffect(() => {
+    const { sessionCode } = useParams();
 
-    loadSession();
+    const navigate = useNavigate();
 
-    socket.emit("join-room", sessionCode);
+    const [session, setSession] = useState(null);
 
-  socket.on("quiz-started", (quiz) => {
+    const loadSession = async () => {
 
-    navigate(`/student-quiz/${quiz.quizId}`, {
-        state: {
-            duration: quiz.duration,
-            title: quiz.title,
-        },
-    });
+        try {
 
-});
+            const res = await getSessionDetails(sessionCode);
 
+            setSession(res.data);
 
-socket.on("poll-started", (poll) => {
+        }
 
-    navigate(`/student-poll/${poll.pollId}`);
+        catch (err) {
 
-});
+            console.log(err);
 
-    return () => {
-
-   socket.off("quiz-started");
-socket.off("poll-started");
+        }
 
     };
 
-}, []);
+    useEffect(() => {
 
-  const loadSession = async () => {
-    try {
-      const res = await getSessionDetails(sessionCode);
-      setSession(res.data);
-    } catch (err) {
-      console.log(err);
-    }
-  };
+        loadSession();
 
-  return (
-    <div className="min-h-screen bg-slate-100">
-      {/* Header */}
+        socket.emit("join-room", sessionCode);
 
-      <div className="bg-slate-900 px-10 py-6 text-white shadow-lg">
-        <h1 className="text-3xl font-bold">
-          THRYVE Classroom
-        </h1>
+        // Faculty starts quiz while student is already inside
+        socket.on("quiz-started", (quiz) => {
 
-        <p className="mt-2 text-slate-300">
-          Live Interactive Classroom
-        </p>
-      </div>
+            navigate(`/student-quiz/${quiz.quizId}`, {
 
-      <div className="mx-auto max-w-7xl p-8">
-        <div className="grid grid-cols-3 gap-6">
+                state: {
 
-          {/* Left */}
+                    duration: quiz.duration,
 
-          <div className="col-span-2 space-y-6">
+                    title: quiz.title
 
-            <div className="rounded-3xl bg-white p-8 shadow">
+                }
 
-              <div className="flex items-start gap-4">
+            });
 
-                <BookOpen
-                  className="mt-2 text-orange-500"
-                  size={34}
-                />
+        });
 
-                <div>
+        // Faculty starts poll
+        socket.on("poll-started", (poll) => {
 
-                  <h2 className="text-4xl font-bold text-slate-900">
-                    {session?.title || "Loading..."}
-                  </h2>
+            navigate(`/student-poll/${poll.pollId}`);
 
-                  <p className="mt-3 text-lg text-slate-600">
-                    📘 {session?.subject}
-                  </p>
+        });
 
-                  <p className="mt-1 text-slate-600">
-                    👨‍🏫 Faculty :
-                    <span className="font-semibold">
-                      {" "}
-                      {session?.faculty_name}
-                    </span>
-                  </p>
+        // Student joins after faculty already started quiz
+        const interval = setInterval(async () => {
 
-                  <p className="mt-1 text-slate-600">
-                    🏫 Section :
-                    <span className="font-semibold">
-                      {" "}
-                      {session?.section}
-                    </span>
-                  </p>
+            try {
 
-                  <p className="mt-3 text-slate-500">
-                    🔑 Session Code :
-                    <span className="font-bold text-orange-500">
-                      {" "}
-                      {session?.session_code}
-                    </span>
-                  </p>
+                const res = await getSessionDetails(sessionCode);
 
-                </div>
+                setSession(res.data);
 
-              </div>
+                if (
 
-            </div>
+                    res.data.current_quiz &&
 
-            {/* Quiz Area */}
+                    res.data.current_quiz.status === "live"
 
-            <div className="rounded-3xl bg-white p-8 shadow">
+                ) {
 
-              <h3 className="mb-5 text-2xl font-bold">
-                Quiz Area
-              </h3>
+                    clearInterval(interval);
 
-              <div className="rounded-2xl border-2 border-dashed border-slate-300 p-16 text-center">
+                    navigate(`/student-quiz/${res.data.current_quiz.id}`);
 
-                <p className="text-xl text-slate-500">
-                  Waiting for faculty to start the quiz...
+                }
+
+            }
+
+            catch (err) {
+
+                console.log(err);
+
+            }
+
+        }, 2000);
+
+        return () => {
+
+            socket.off("quiz-started");
+
+            socket.off("poll-started");
+
+            clearInterval(interval);
+
+        };
+
+    }, []);
+
+    return (
+
+        <div className="min-h-screen bg-slate-100">
+
+            {/* Header */}
+
+            <div className="bg-slate-900 px-10 py-6 text-white shadow-lg">
+
+                <h1 className="text-3xl font-bold">
+
+                    THRYVE Classroom
+
+                </h1>
+
+                <p className="mt-2 text-slate-300">
+
+                    Live Interactive Classroom
+
                 </p>
 
-              </div>
-
             </div>
 
-          </div>
+            <div className="mx-auto max-w-7xl p-8">
 
-          {/* Right */}
+                <div className="grid grid-cols-3 gap-6">
 
-          <div className="space-y-6">
+                    {/* Left */}
 
-            <div className="rounded-3xl bg-white p-6 shadow">
+                    <div className="col-span-2 space-y-6">
 
-              <div className="flex items-center gap-3">
+                        <div className="rounded-3xl bg-white p-8 shadow">
 
-                <Users className="text-orange-500" />
+                            <div className="flex items-start gap-4">
 
-                <h2 className="text-xl font-bold">
-                  Participants
-                </h2>
+                                <BookOpen
 
-              </div>
+                                    className="mt-2 text-orange-500"
 
-              <div className="mt-6 space-y-3">
+                                    size={34}
 
-                <div className="rounded-xl bg-slate-100 p-3">
-                  Waiting for students...
+                                />
+
+                                <div>
+
+                                    <h2 className="text-4xl font-bold text-slate-900">
+
+                                        {session?.title || "Loading..."}
+
+                                    </h2>
+
+                                    <p className="mt-3 text-lg text-slate-600">
+
+                                        📘 {session?.subject}
+
+                                    </p>
+
+                                    <p className="mt-1 text-slate-600">
+
+                                        👨‍🏫 Faculty :
+
+                                        <span className="font-semibold">
+
+                                            {" "}
+
+                                            {session?.faculty_name}
+
+                                        </span>
+
+                                    </p>
+
+                                    <p className="mt-1 text-slate-600">
+
+                                        🏫 Section :
+
+                                        <span className="font-semibold">
+
+                                            {" "}
+
+                                            {session?.section}
+
+                                        </span>
+
+                                    </p>
+
+                                    <p className="mt-3 text-slate-500">
+
+                                        🔑 Session Code :
+
+                                        <span className="font-bold text-orange-500">
+
+                                            {" "}
+
+                                            {session?.session_code}
+
+                                        </span>
+
+                                    </p>
+
+                                </div>
+
+                            </div>
+
+                        </div>
+
+                        {/* Quiz Area */}
+
+                        <div className="rounded-3xl bg-white p-8 shadow">
+
+                            <h3 className="mb-5 text-2xl font-bold">
+
+                                Quiz Area
+
+                            </h3>
+
+                            <div className="rounded-2xl border-2 border-dashed border-slate-300 p-16 text-center">
+
+                                <p className="text-xl text-slate-500">
+
+                                    Waiting for faculty to start the quiz...
+
+                                </p>
+
+                            </div>
+
+                        </div>
+
+                    </div>
+
+                    {/* Right */}
+
+                    <div className="space-y-6">
+
+                        <div className="rounded-3xl bg-white p-6 shadow">
+
+                            <div className="flex items-center gap-3">
+
+                                <Users className="text-orange-500" />
+
+                                <h2 className="text-xl font-bold">
+
+                                    Participants
+
+                                </h2>
+
+                            </div>
+
+                            <div className="mt-6 space-y-3">
+
+                                <div className="rounded-xl bg-slate-100 p-3">
+
+                                    Waiting for students...
+
+                                </div>
+
+                            </div>
+
+                        </div>
+
+                        <div className="rounded-3xl bg-white p-6 shadow">
+
+                            <div className="flex items-center gap-3">
+
+                                <Sparkles className="text-orange-500" />
+
+                                <h2 className="text-xl font-bold">
+
+                                    AI Assistant
+
+                                </h2>
+
+                            </div>
+
+                            <div className="mt-5 rounded-2xl bg-orange-50 p-4">
+
+                                AI explanations will appear here during the session.
+
+                            </div>
+
+                        </div>
+
+                    </div>
+
                 </div>
 
-              </div>
-
             </div>
-
-            <div className="rounded-3xl bg-white p-6 shadow">
-
-              <div className="flex items-center gap-3">
-
-                <Sparkles className="text-orange-500" />
-
-                <h2 className="text-xl font-bold">
-                  AI Assistant
-                </h2>
-
-              </div>
-
-              <div className="mt-5 rounded-2xl bg-orange-50 p-4">
-
-                AI explanations will appear here during the session.
-
-              </div>
-
-            </div>
-
-          </div>
 
         </div>
 
-      </div>
-    </div>
-  );
+    );
+
 };
 
 export default JoinSession;

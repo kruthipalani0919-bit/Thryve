@@ -3,6 +3,7 @@ import express from "express";
 import {
   createSession,
   getFacultySessions,
+  getAllSessions,
   updateSession,
   deleteSession,
 } from "../controllers/sessionController.js";
@@ -10,6 +11,9 @@ import {
 const router = express.Router();
 
 router.post("/", createSession);
+
+// IMPORTANT: Keep this BEFORE "/:faculty_id"
+router.get("/all", getAllSessions);
 
 router.get("/:faculty_id", getFacultySessions);
 

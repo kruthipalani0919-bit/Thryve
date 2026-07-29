@@ -1,13 +1,12 @@
 import {
   LayoutDashboard,
   Calendar,
-  BarChart3,
+  Sparkles,
   BrainCircuit,
   Settings,
   LogOut,
 } from "lucide-react";
 import { useNavigate, useLocation } from "react-router-dom";
-
 const menu = [
   {
     icon: LayoutDashboard,
@@ -20,10 +19,10 @@ const menu = [
     path: "/my-sessions",
   },
   {
-    icon: BarChart3,
-    text: "Analytics",
-    path: "/analytics",
-  },
+    icon: Sparkles,
+    text: "AI Quiz Library",
+    path: "/ai-quiz-library",
+},
   {
     icon: BrainCircuit,
     text: "AI Insights",

@@ -2,6 +2,9 @@ import http from "http";
 import { Server } from "socket.io";
 import app from "./app.js";
 import "./config/database.js";
+import dotenv from "dotenv";
+
+dotenv.config();
 
 const server = http.createServer(app);
 

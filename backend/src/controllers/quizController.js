@@ -75,13 +75,13 @@ export const getSessionQuizzes = async (req, res) => {
 };
 export const startQuiz = async (req, res) => {
 
-    try {
+  try {
 
-        const { quizId } = req.params;
+    const { quizId } = req.params;
 
-        // Get quiz details
-        const quiz = await pool.query(
-            `
+    // Get quiz details
+    const quiz = await pool.query(
+      `
             SELECT
                 q.*,
                 s.session_code
@@ -90,129 +90,151 @@ export const startQuiz = async (req, res) => {
             ON q.session_id = s.id
             WHERE q.id = $1
             `,
-            [quizId]
-        );
+      [quizId]
+    );
 
-        if (quiz.rows.length === 0) {
+    if (quiz.rows.length === 0) {
 
-            return res.status(404).json({
-                message: "Quiz not found",
-            });
+      return res.status(404).json({
+        message: "Quiz not found",
+      });
 
-        }
+    }
 
-        // Mark quiz as live and store start time
-        await pool.query(
-            `
+    // Complete any previously live quizzes
+await pool.query(
+  `
+  UPDATE quizzes
+  SET status = 'completed'
+  WHERE session_id = $1
+    AND status = 'live'
+  `,
+  [quiz.rows[0].session_id]
+);
+
+// Complete any previously live polls
+await pool.query(
+  `
+  UPDATE polls
+  SET status = 'completed'
+  WHERE session_id = $1
+    AND status = 'live'
+  `,
+  [quiz.rows[0].session_id]
+);
+
+    // Mark quiz as live and store start time
+    await pool.query(
+      `
             UPDATE quizzes
             SET
                 status = 'live',
                 started_at = NOW()
             WHERE id = $1
             `,
-            [quizId]
-        );
+      [quizId]
+    );
 
-        // Socket.IO instance
-        const io = req.app.get("io");
+    // Socket.IO instance
+    const io = req.app.get("io");
 
-        // Notify all students in this classroom
-        io.to(quiz.rows[0].session_code).emit("quiz-started", {
+    // Notify all students in this classroom
+    io.to(quiz.rows[0].session_code).emit("quiz-started", {
 
-            quizId,
+      quizId,
 
-            title: quiz.rows[0].title,
+      title: quiz.rows[0].title,
 
-            duration: quiz.rows[0].duration,
+      duration: quiz.rows[0].duration,
 
-        });
+    });
 
-        // Auto complete quiz after duration
-        setTimeout(async () => {
+    // Auto complete quiz after duration
+    setTimeout(async () => {
 
-            try {
+      try {
 
-                await pool.query(
-                    `
+        await pool.query(
+          `
                     UPDATE quizzes
                     SET status = 'completed'
                     WHERE id = $1
                     `,
-                    [quizId]
-                );
+          [quizId]
+        );
 
-                io.to(quiz.rows[0].session_code).emit("quiz-ended", {
+        io.to(quiz.rows[0].session_code).emit("quiz-ended", {
 
-                    quizId,
-
-                });
-
-                console.log("Quiz auto completed");
-
-            } catch (err) {
-
-                console.log("Quiz auto complete error:", err);
-
-            }
-
-        }, quiz.rows[0].duration * 1000);
-
-        res.json({
-
-            message: "Quiz Started Successfully",
+          quizId,
 
         });
 
-    }
+        console.log("Quiz auto completed");
 
-    catch (err) {
+      } catch (err) {
 
-        console.log(err);
+        console.log("Quiz auto complete error:", err);
 
-        res.status(500).json({
+      }
 
-            message: "Server Error",
+    }, quiz.rows[0].duration * 1000);
 
-        });
+    res.json({
 
-    }
+      message: "Quiz Started Successfully",
+
+    });
+
+  }
+
+  catch (err) {
+
+    console.log(err);
+
+    res.status(500).json({
+
+      message: "Server Error",
+
+    });
+
+  }
 
 };
 export const getQuizById = async (req, res) => {
 
-    try {
+  try {
 
-        const { quizId } = req.params;
+    const { quizId } = req.params;
 
-        const result = await pool.query(
-            `
+    const result = await pool.query(
+      `
             SELECT *
             FROM quizzes
             WHERE id = $1
             `,
-            [quizId]
-        );
+      [quizId]
+    );
 
-        if (result.rows.length === 0) {
+    if (result.rows.length === 0) {
 
-            return res.status(404).json({
-                message: "Quiz not found"
-            });
-
-        }
-
-        res.json(result.rows[0]);
+      return res.status(404).json({
+        message: "Quiz not found"
+      });
 
     }
 
-    catch (err) {
+    res.json(result.rows[0]);
 
-        console.log(err);
+  }
 
-        res.status(500).json({
-            message: "Server Error"
-        });
+  catch (err) {
 
-    }
+    console.log(err);
+
+    res.status(500).json({
+      message: "Server Error"
+    });
+
+  }
 
 };

@@ -25,63 +25,70 @@ export const joinSession = async (req, res) => {
 
     if (existing.rows.length > 0) {
 
-  const io = req.app.get("io");
+      const io = req.app.get("io");
 
-  const student = await pool.query(
-    `
-    SELECT name
-    FROM students
-    WHERE student_id=$1
-    `,
-    [student_id]
-  );
+      const student = await pool.query(
+        `
+        SELECT name
+        FROM students
+        WHERE student_id=$1
+        `,
+        [student_id]
+      );
 
-  io.to(session_code).emit("student-joined", {
-    student_id,
-    student_name: student.rows[0].name,
-  });
+      io.to(session_code).emit("student-joined", {
+        student_id,
+        student_name: student.rows[0].name,
+      });
 
-  return res.json({
-    message: "Already Joined",
-    session: session.rows[0],
-  });
-}
+      return res.json({
+        message: "Already Joined",
+        session: session.rows[0],
+      });
+    }
 
     await pool.query(
-      `INSERT INTO attendance
+      `
+      INSERT INTO attendance
       (session_id, student_id, status)
-      VALUES ($1,$2,'Present')`,
+      VALUES ($1,$2,'Present')
+      `,
       [session.rows[0].id, student_id]
     );
 
     const io = req.app.get("io");
 
-const student = await pool.query(
-  `SELECT name
-   FROM students
-   WHERE student_id = $1`,
-  [student_id]
-);
+    const student = await pool.query(
+      `
+      SELECT name
+      FROM students
+      WHERE student_id = $1
+      `,
+      [student_id]
+    );
 
-console.log("Student Query:", student.rows);
+    console.log("Student Query:", student.rows);
 
-if (student.rows.length > 0) {
-  io.to(session_code).emit("student-joined", {
-    student_id,
-    student_name: student.rows[0].name,
-  });
-}
+    if (student.rows.length > 0) {
+      io.to(session_code).emit("student-joined", {
+        student_id,
+        student_name: student.rows[0].name,
+      });
+    }
+
     res.json({
       message: "Joined Successfully",
       session: session.rows[0],
     });
 
   } catch (err) {
+
     console.log(err);
 
     res.status(500).json({
       message: "Server Error",
     });
+
   }
 };
 
@@ -89,12 +96,20 @@ if (student.rows.length > 0) {
 // Get Session Details
 // ===================================
 export const getSessionDetails = async (req, res) => {
+
   try {
+
     const { sessionCode } = req.params;
 
+    // ----------------------------
+    // Session Details
+    // ----------------------------
+
     const result = await pool.query(
+
       `
       SELECT
+        s.id,
         s.session_code,
         s.title,
         s.subject,
@@ -103,26 +118,76 @@ export const getSessionDetails = async (req, res) => {
         s.faculty_id,
         f.faculty_name
       FROM sessions s
+
       LEFT JOIN faculty f
       ON s.faculty_id = f.faculty_id
+
       WHERE s.session_code = $1
       `,
+
       [sessionCode]
+
     );
 
     if (result.rows.length === 0) {
+
       return res.status(404).json({
+
         message: "Session not found",
+
       });
+
     }
 
-    res.json(result.rows[0]);
+    const session = result.rows[0];
 
-  } catch (err) {
+    // ----------------------------
+    // Find Live Quiz
+    // ----------------------------
+
+    const liveQuiz = await pool.query(
+
+      `
+      SELECT
+        id,
+        title,
+        duration,
+        status
+
+      FROM quizzes
+
+      WHERE
+        session_id = $1
+        AND status = 'live'
+
+      ORDER BY created_at DESC
+
+      LIMIT 1
+      `,
+
+      [session.id]
+
+    );
+
+    session.current_quiz =
+      liveQuiz.rows.length > 0
+        ? liveQuiz.rows[0]
+        : null;
+
+    res.json(session);
+
+  }
+
+  catch (err) {
+
     console.log(err);
 
     res.status(500).json({
+
       message: "Server Error",
+
     });
+
   }
+
 };

@@ -1,4 +1,4 @@
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { useParams } from "react-router-dom";
 import api from "../services/api";
 import { submitQuiz } from "../services/quizApi";
@@ -11,18 +11,29 @@ const StudentQuiz = () => {
     const [questions, setQuestions] = useState([]);
     const [answers, setAnswers] = useState({});
     const [submitted, setSubmitted] = useState(false);
+    const [score, setScore] = useState(null);
+    const [report, setReport] = useState([]);
     const [timeLeft, setTimeLeft] = useState(0);
-    const [timerStarted, setTimerStarted] = useState(false);
+    const timerStarted = useRef(false);
 
-    // Load quiz only once
     useEffect(() => {
+
         loadQuiz();
+
+        const interval = setInterval(() => {
+
+            loadQuiz();
+
+        }, 2000);
+
+        return () => clearInterval(interval);
+
     }, []);
 
     // Countdown Timer
     useEffect(() => {
 
-        if (!timerStarted || submitted) return;
+        if (!timerStarted.current || submitted) return;
 
         if (timeLeft <= 0) {
 
@@ -53,19 +64,17 @@ const StudentQuiz = () => {
             setQuiz(quizRes.data);
 
             console.log("Duration:", quizRes.data.duration);
-console.log("Status:", quizRes.data.status);
+            console.log("Status:", quizRes.data.status);
 
             if (quizRes.data.status === "live") {
 
-                // Start timer only once
-                if (!timerStarted) {
+                if (!timerStarted.current) {
+
+                    timerStarted.current = true;
 
                     setTimeLeft(Number(quizRes.data.duration));
 
-                    setTimerStarted(true);
-
                 }
-
                 const questionRes = await api.get(`/quizzes/${quizId}/questions`);
 
                 setQuestions(questionRes.data);
@@ -92,12 +101,16 @@ console.log("Status:", quizRes.data.status);
 
             const result = await submitQuiz(answers);
 
+            timerStarted.current = false;
+
+            setScore({
+                score: result.score,
+                total: result.total
+            });
+
+            setReport(result.report);
+
             setSubmitted(true);
-
-            alert(
-                `Quiz Submitted!\n\nScore: ${result.score}/${result.total}`
-            );
-
         }
 
         catch (err) {
@@ -250,6 +263,103 @@ console.log("Status:", quizRes.data.status);
                         </div>
 
                     ))
+
+                )}
+
+
+                {submitted && score && (
+
+                    <div className="mt-8">
+
+                        <div className="mb-8 rounded-xl bg-green-100 p-6">
+
+                            <h2 className="text-3xl font-bold">
+                                Quiz Submitted Successfully
+                            </h2>
+
+                            <p className="mt-2 text-xl">
+                                Score: <b>{score.score}</b> / {score.total}
+                            </p>
+
+                        </div>
+
+                        <h2 className="mb-5 text-2xl font-bold">
+                            AI Learning Report
+                        </h2>
+
+                        {report.map((item, index) => (
+
+                            <div
+                                key={item.questionId}
+                                className="mb-6 rounded-xl border bg-white p-6 shadow"
+                            >
+
+                                <h3 className="text-lg font-semibold">
+
+                                    Q{index + 1}. {item.question}
+
+                                </h3>
+
+                                <div className="mt-4">
+
+                                    <p>
+
+                                        Your Answer:
+
+                                        <span className="ml-2 font-semibold">
+
+                                            {item.student_answer || "Not Answered"}
+
+                                        </span>
+
+                                    </p>
+
+                                    <p>
+
+                                        Correct Answer:
+
+                                        <span className="ml-2 font-semibold text-green-700">
+
+                                            {item.correct_answer}
+
+                                        </span>
+
+                                    </p>
+
+                                    <p
+                                        className={`mt-2 font-bold ${item.isCorrect
+                                                ? "text-green-600"
+                                                : "text-red-600"
+                                            }`}
+                                    >
+
+                                        {item.isCorrect ? "Correct" : "Incorrect"}
+
+                                    </p>
+
+                                    <div className="mt-4 rounded-lg bg-blue-50 p-4">
+
+                                        <h4 className="font-semibold">
+
+                                            Explanation
+
+                                        </h4>
+
+                                        <p className="mt-2">
+
+                                            {item.explanation}
+
+                                        </p>
+
+                                    </div>
+
+                                </div>
+
+                            </div>
+
+                        ))}
+
+                    </div>
 
                 )}
 

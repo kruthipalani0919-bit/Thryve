@@ -86,20 +86,28 @@ const SessionCard = ({
         Open Session
       </button>
 
-<div className="mt-3 flex gap-3">
+<div className="mt-3 grid grid-cols-3 gap-3">
 
   <button
     onClick={() => navigate(`/quiz/${session.id}`)}
-    className="flex-1 rounded-xl border border-orange-500 py-3 font-semibold text-orange-500 transition hover:bg-orange-50"
+    className="rounded-xl border border-orange-500 py-3 font-semibold text-orange-500 transition hover:bg-orange-50"
   >
     Manage Quiz
   </button>
 
   <button
     onClick={() => navigate(`/polls/${session.id}`)}
-    className="flex-1 rounded-xl bg-black py-3 font-semibold text-white transition hover:bg-orange-500"
+   className="rounded-xl border border-orange-500 py-3 font-semibold text-orange-500 transition hover:bg-orange-50"
   >
+  
     Polls
+  </button>
+
+  <button
+    onClick={() => navigate(`/ai-quizzes/${session.id}`)}
+  className="rounded-xl border border-orange-500 py-3 font-semibold text-orange-500 transition hover:bg-orange-50"
+  >
+    AI Quizzes
   </button>
 
 </div>

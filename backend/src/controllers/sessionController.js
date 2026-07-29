@@ -182,3 +182,46 @@ export const deleteSession = async (req, res) => {
     });
   }
 };
+
+
+// ======================================
+// Get All Sessions
+// ======================================
+
+export const getAllSessions = async (req, res) => {
+
+    try {
+
+        const result = await pool.query(
+
+            `
+            SELECT
+                id,
+                title,
+                session_code,
+                created_at
+            FROM sessions
+            ORDER BY created_at DESC
+            `
+
+        );
+
+        res.json(result.rows);
+
+    }
+
+    catch (err) {
+
+        console.log(err);
+
+        res.status(500).json({
+
+            success: false,
+
+            message: "Failed to load sessions"
+
+        });
+
+    }
+
+};
